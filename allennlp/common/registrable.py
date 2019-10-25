@@ -35,27 +35,35 @@ class Registrable(FromParams):
     module in which they reside (as this causes any import of either the abstract class or
     a subclass to load all other subclasses and the abstract class).
     """
+
     _registry: Dict[Type, Dict[str, Type]] = defaultdict(dict)
     default_implementation: str = None
 
     @classmethod
     def register(cls: Type[T], name: str):
         registry = Registrable._registry[cls]
+
         def add_subclass_to_registry(subclass: Type[T]):
             # Add to registry, raise an error if key has already been used.
             if name in registry:
                 message = "Cannot register %s as %s; name already in use for %s" % (
-                        name, cls.__name__, registry[name].__name__)
-                raise ConfigurationError(message)
+                    name,
+                    cls.__name__,
+                    registry[name].__name__,
+                )
+                # raise ConfigurationError(message)
             registry[name] = subclass
             return subclass
+
         return add_subclass_to_registry
 
     @classmethod
     def by_name(cls: Type[T], name: str) -> Type[T]:
         logger.debug(f"instantiating registered subclass {name} of {cls}")
         if name not in Registrable._registry[cls]:
-            raise ConfigurationError("%s is not a registered name for %s" % (name, cls.__name__))
+            raise ConfigurationError(
+                "%s is not a registered name for %s" % (name, cls.__name__)
+            )
         return Registrable._registry[cls].get(name)
 
     @classmethod
